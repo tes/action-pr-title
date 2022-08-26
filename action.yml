@@ -2,6 +2,9 @@ name: 'Pull Request title rules'
 description: 'Github action to enforce Pull Request title conventions'
 author: 'deepakputhraya'
 inputs:
+  validation_message:
+    description: 'Custom message to display on validation failure'
+    required: false
   regex:
     description: 'Regex to validate the pull request title'
     required: false

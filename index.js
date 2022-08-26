@@ -13,7 +13,7 @@ function validateTitlePrefix(title, prefix, caseSensitive) {
 
 async function run() {
     try {
-        const authToken = core.getInput('github_token', {required: true})
+        const authToken = core.getInput('github_token', { required: true })
         const eventName = github.context.eventName;
         core.info(`Event name: ${eventName}`);
         if (validEvent.indexOf(eventName) < 0) {
@@ -29,34 +29,35 @@ async function run() {
         // the user updates the title and re-runs the workflow, it would
         // be outdated. Therefore fetch the pull request via the REST API
         // to ensure we use the current title.
-        const {data: pullRequest} = await client.rest.pulls.get({
+        const { data: pullRequest } = await client.rest.pulls.get({
           owner,
           repo,
           pull_number: github.context.payload.pull_request.number
         });
 
         const title = pullRequest.title;
+        const customValidationMessage = core.getInput('validation_message');
         
         core.info(`Pull Request title: "${title}"`);
 
         // Check if title pass regex
         const regex = RegExp(core.getInput('regex'));
         if (!regex.test(title)) {
-            core.setFailed(`Pull Request title "${title}" failed to pass match regex - ${regex}`);
+            core.setFailed(customValidationMessage || `Pull Request title "${title}" failed to pass match regex - ${regex}`);
             return
         }
 
         // Check min length
         const minLen = parseInt(core.getInput('min_length'));
         if (title.length < minLen) {
-            core.setFailed(`Pull Request title "${title}" is smaller than min length specified - ${minLen}`);
+            core.setFailed(customValidationMessage || `Pull Request title "${title}" is smaller than min length specified - ${minLen}`);
             return
         }
 
         // Check max length
         const maxLen = parseInt(core.getInput('max_length'));
         if (maxLen > 0 && title.length > maxLen) {
-            core.setFailed(`Pull Request title "${title}" is greater than max length specified - ${maxLen}`);
+            core.setFailed(customValidationMessage || `Pull Request title "${title}" is greater than max length specified - ${maxLen}`);
             return
         }
 
@@ -65,7 +66,7 @@ async function run() {
         const prefixCaseSensitive = (core.getInput('prefix_case_sensitive') === 'true');
         core.info(`Allowed Prefixes: ${prefixes}`);
         if (prefixes.length > 0 && !prefixes.split(',').some((el) => validateTitlePrefix(title, el, prefixCaseSensitive))) {
-            core.setFailed(`Pull Request title "${title}" did not match any of the prefixes - ${prefixes}`);
+            core.setFailed(customValidationMessage || `Pull Request title "${title}" did not match any of the prefixes - ${prefixes}`);
             return
         }
 
@@ -73,7 +74,7 @@ async function run() {
         prefixes = core.getInput('disallowed_prefixes');
         core.info(`Disallowed Prefixes: ${prefixes}`);
         if (prefixes.length > 0 && prefixes.split(',').some((el) => validateTitlePrefix(title, el, prefixCaseSensitive))) {
-            core.setFailed(`Pull Request title "${title}" matched with a disallowed prefix - ${prefixes}`);
+            core.setFailed(customValidationMessage || `Pull Request title "${title}" matched with a disallowed prefix - ${prefixes}`);
             return
         }
 
